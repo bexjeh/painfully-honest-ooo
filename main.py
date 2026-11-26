@@ -1,21 +1,38 @@
-"""Painfully Honest Out-of-Office: write one honest auto-reply to entry.txt."""
+"""Painfully honest out-of-office auto-reply.
+
+Writes a single one-sentence auto-reply to entry.txt under the
+output directory named by MAKEFUN_OUTPUT_DIR (falling back to
+/output, then to a local output directory), and prints it.
+Standard library only; deterministic.
+"""
 
 import os
+from pathlib import Path
 
-REPLY = (
-    "I'm away until Monday, and this auto-reply is doing the saying no for me, "
-    "since I've never once managed it in person \u2014 thank you for your "
-    "patience, and I'll reply when I'm back."
+ENTRY = (
+    "I'm away until Monday, and your email joins 412 unread messages "
+    "I was already ignoring before I left \u2014 if it's urgent, please "
+    "call Sara, who answers faster than I do."
 )
 
 
-def main():
-    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR") or "/output"
-    os.makedirs(out_dir, exist_ok=True)
-    # Write the reply exactly, with no trailing newline: the gate counts
-    # every character in the file, so the file is the sentence and nothing else.
-    with open(os.path.join(out_dir, "entry.txt"), "w", encoding="utf-8") as f:
-        f.write(REPLY)
+def output_dir() -> Path:
+    env_dir = os.environ.get("MAKEFUN_OUTPUT_DIR")
+    if env_dir:
+        return Path(env_dir)
+    if Path("/output").is_dir():
+        return Path("/output")
+    return Path("output")
+
+
+def main() -> None:
+    text = ENTRY.strip()
+    assert 1 <= len(text) <= 200, len(text)
+    assert text.count("\n") == 0
+    out = output_dir()
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "entry.txt").write_text(text, encoding="utf-8")
+    print(text)
 
 
 if __name__ == "__main__":
